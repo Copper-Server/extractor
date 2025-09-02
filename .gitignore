@@ -39,3 +39,18 @@
 
 # debug information files
 *.dwo
+
+# Ignore Gradle project-specific cache directory
+.gradle
+
+# Ignore Gradle version cache directory
+radle-version
+
+# Ignore Gradle build output directory
+build
+
+#Runs
+run
+
+#Kotlin
+.kotlin
