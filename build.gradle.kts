@@ -1,5 +1,7 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import java.net.URL
+import java.io.File
 
 plugins {
     kotlin("jvm") version "2.1.10"
@@ -94,4 +96,49 @@ publishing {
         // The repositories here will be used for publishing your artifact, not for
         // retrieving dependencies.
     }
+}
+
+
+val mcVersion = project.property("minecraft_version") as String
+val runDir = File(rootDir, "run")
+val serverJar = File(runDir, "minecraft-server-$mcVersion.jar")
+
+tasks.register("downloadVanillaServerJar") {
+    group = "datagen"
+    description = "Downloads the official Minecraft server jar for the current version."
+    outputs.file(serverJar)
+    doLast {
+        if (!runDir.exists()) runDir.mkdirs()
+        if (!serverJar.exists()) {
+            val manifestUrl = "https://launchermeta.mojang.com/mc/game/version_manifest.json"
+            val manifest = URL(manifestUrl).readText()
+            val versionRegex = Regex("\"id\"\\s*:\\s*\"$mcVersion\".*?\"url\"\\s*:\\s*\"(.*?)\"", RegexOption.DOT_MATCHES_ALL)
+            val versionMatch = versionRegex.find(manifest)
+            requireNotNull(versionMatch) { "Could not find Minecraft version $mcVersion in manifest." }
+            val versionUrl = versionMatch.groupValues[1]
+            val versionJson = URL(versionUrl).readText()
+            val serverRegex = Regex("\"server\"\\s*:\\s*\\{[^}]*\"url\"\\s*:\\s*\"(.*?)\"", RegexOption.DOT_MATCHES_ALL)
+            val serverMatch = serverRegex.find(versionJson)
+            requireNotNull(serverMatch) { "Could not find server jar for $mcVersion." }
+            val jarUrl = serverMatch.groupValues[1]
+            println("Downloading Minecraft server jar for $mcVersion from $jarUrl")
+            URL(jarUrl).openStream().use { input ->
+                serverJar.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+        } else {
+            println("Server jar already exists: $serverJar")
+        }
+    }
+}
+
+tasks.register<JavaExec>("runVanillaDatagen") {
+    group = "datagen"
+    description = "Runs Mojang's native data extractor using the downloaded server jar."
+    dependsOn("downloadVanillaServerJar")
+    classpath = files(serverJar)
+    jvmArgs = listOf("-DbundlerMainClass=net.minecraft.data.Main")
+    args = listOf("--all")
+    workingDir = runDir
 }
