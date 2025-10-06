@@ -15,6 +15,7 @@ import net.minecraft.entity.ai.brain.sensor.SensorType
 import net.minecraft.entity.ai.brain.task.Task
 import net.minecraft.entity.data.TrackedData;
 import net.minecraft.entity.Entity
+import net.minecraft.entity.EntityPose
 import net.minecraft.entity.EntityType
 import net.minecraft.entity.SpawnLocationTypes
 import net.minecraft.entity.SpawnReason
@@ -194,6 +195,11 @@ class Entities : Extractor {
             entityJson.addProperty("translation_key", entityType.translationKey)
             val entity = createEntity(entityType, server)
             if (entity != null) {
+                val posesJson = JsonArray()
+                for (pose in EntityPose.entries) {
+                    posesJson.add(entity.getEyeHeight(pose))
+                }
+                entityJson.add("eye_height_in_each_pose", posesJson)
                 if (entity is LivingEntity) {
                     entityJson.addProperty("max_health", entity.maxHealth)
                     entityJson.add("brain_tasks", extractEntityBrainTasks(entity))
