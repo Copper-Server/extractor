@@ -12,7 +12,7 @@ class SpawnEgg : Extractor {
         val json = JsonObject()
 
         for (spawnEggItem in SpawnEggItem.getAll()) {
-            val type = spawnEggItem.getEntityType(server.registryManager, spawnEggItem.defaultStack)
+            val type = spawnEggItem.getEntityType(spawnEggItem.defaultStack)
             json.addProperty(
                 Registries.ITEM.getRawId(spawnEggItem).toString(),
                 Registries.ENTITY_TYPE.getRawId(type)
