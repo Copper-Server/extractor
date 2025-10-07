@@ -35,6 +35,7 @@ class Entry : ModInitializer {
             SpawnEgg(),
             StatusEffects(),
             SyncedRegistries(),
+            Protocol(),
         )
         val multiExtractors = arrayOf(
             Blocks()
