@@ -54,3 +54,6 @@ run
 
 #Kotlin
 .kotlin
+
+#vscode
+bin
