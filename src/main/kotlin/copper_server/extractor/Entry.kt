@@ -21,6 +21,8 @@ class Entry : ModInitializer {
 
     override fun onInitialize() {
         val extractors = arrayOf(
+            BlockEntityMap(),
+            BlockEntityTypes(),
             BlockProperties(),
             ComposterIncreaseChance(),
             Entities(),

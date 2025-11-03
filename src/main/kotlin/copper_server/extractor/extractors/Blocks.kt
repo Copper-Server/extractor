@@ -201,15 +201,10 @@ class Blocks : MultiExtractor {
             ))
             shapesJson.add(shapeJson)
         }
-
-        val blockEntitiesJson = JsonArray()
-        for (blockEntity in Registries.BLOCK_ENTITY_TYPE) 
-            blockEntitiesJson.add(Registries.BLOCK_ENTITY_TYPE.getId(blockEntity)!!.toString())
-
+        
         return arrayOf(
             Pair(blocksJson, "blocks.json"),
             Pair(shapesJson, "block_shapes.json"),
-            Pair(blockEntitiesJson, "block_entity_types.json"),
         )
     }
 }
