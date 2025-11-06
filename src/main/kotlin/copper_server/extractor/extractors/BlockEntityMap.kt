@@ -17,7 +17,9 @@ import net.minecraft.util.math.BlockPos
 
 class BlockEntityMap : Extractor {
     private val maxExpansionDepth = 4
-    private val skip_unknown_fields = true
+    private val skipUnknownFields = true
+
+    private val preserveUnknown = setOf("stateManager")
 
     private val nonPreservedFieldNames =
             setOf(
@@ -162,8 +164,7 @@ class BlockEntityMap : Extractor {
                         is Boolean -> constantInfo.add(field.name, JsonPrimitive(value))
                         else -> constantInfo.addProperty(field.name, value.toString())
                     }
-                } catch (e: Exception) {
-                }
+                } catch (e: Exception) {}
             }
             valuesArray.add(constantInfo)
         }
@@ -193,24 +194,26 @@ class BlockEntityMap : Extractor {
                 val fieldInfo = JsonObject()
                 fieldInfo.addProperty("name", field.name)
                 val fieldType = field.type
-                fieldInfo.addProperty("type", fieldType.name)
+                fieldInfo.addProperty("type", field.genericType.typeName)
                 fieldInfo.addProperty("declaring_class", field.declaringClass.name)
 
                 if (needToSkip(field)) return@forEach
                 if (associatedNbt != null) {
                     val preservation = determinePreservation(field, associatedNbt, nbtKey)
                     if (preservation == NbtPreservation.NON_PRESERVED) return@forEach
-                    if(skip_unknown_fields)
-                        if(nbtKey == "_____UNKNOWN_____")
-                            return@forEach
+                    if (skipUnknownFields) 
+                        if (nbtKey == "_____UNKNOWN_____") 
+                            if (!preserveUnknown.contains(field.name))
+                                return@forEach
 
                     fieldInfo.addProperty("preservation", preservation.name)
                     fieldInfo.addProperty("nbt_name", nbtKey)
                 } else if (nbtKey != "_____UNKNOWN_____") {
                     fieldInfo.addProperty("preservation", NbtPreservation.UNKNOWN.name)
                     fieldInfo.addProperty("nbt_name", nbtKey)
-                } else if(skip_unknown_fields){
-                    return@forEach
+                } else if (skipUnknownFields) {
+                    if (!preserveUnknown.contains(field.name))
+                        return@forEach
                 }
 
                 try {
