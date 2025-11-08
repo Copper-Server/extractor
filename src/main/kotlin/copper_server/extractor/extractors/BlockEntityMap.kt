@@ -16,6 +16,7 @@ import net.minecraft.server.MinecraftServer
 import net.minecraft.util.math.BlockPos
 
 class BlockEntityMap : Extractor {
+    private val uniqueTypes = mutableSetOf<String>()
     private val maxExpansionDepth = 4
     private val skipUnknownFields = true
 
@@ -194,17 +195,16 @@ class BlockEntityMap : Extractor {
                 val fieldInfo = JsonObject()
                 fieldInfo.addProperty("name", field.name)
                 val fieldType = field.type
-                fieldInfo.addProperty("type", field.genericType.typeName)
+                fieldInfo.addProperty("type", sanitizeName(field.genericType.typeName))
                 fieldInfo.addProperty("declaring_class", field.declaringClass.name)
 
                 if (needToSkip(field)) return@forEach
                 if (associatedNbt != null) {
                     val preservation = determinePreservation(field, associatedNbt, nbtKey)
                     if (preservation == NbtPreservation.NON_PRESERVED) return@forEach
-                    if (skipUnknownFields) 
-                        if (nbtKey == "_____UNKNOWN_____") 
-                            if (!preserveUnknown.contains(field.name))
-                                return@forEach
+                    if (skipUnknownFields)
+                            if (nbtKey == "_____UNKNOWN_____")
+                                    if (!preserveUnknown.contains(field.name)) return@forEach
 
                     fieldInfo.addProperty("preservation", preservation.name)
                     fieldInfo.addProperty("nbt_name", nbtKey)
@@ -212,9 +212,10 @@ class BlockEntityMap : Extractor {
                     fieldInfo.addProperty("preservation", NbtPreservation.UNKNOWN.name)
                     fieldInfo.addProperty("nbt_name", nbtKey)
                 } else if (skipUnknownFields) {
-                    if (!preserveUnknown.contains(field.name))
-                        return@forEach
+                    if (!preserveUnknown.contains(field.name)) return@forEach
                 }
+
+                uniqueTypes.add(sanitizeName(field.genericType.typeName))
 
                 try {
                     field.isAccessible = true
@@ -224,6 +225,19 @@ class BlockEntityMap : Extractor {
                         (fieldValue as? Collection<*>)?.let {
                             fieldInfo.addProperty("default_size", it.size)
                         }
+                    }
+
+                    (fieldValue as? IntArray)?.let {
+                        fieldInfo.addProperty("size", it.size)
+                    }
+                    (fieldValue as? DoubleArray)?.let {
+                        fieldInfo.addProperty("size", it.size)
+                    }
+                    (fieldValue as? LongArray)?.let {
+                        fieldInfo.addProperty("size", it.size)
+                    }
+                    (fieldValue as? ByteArray)?.let {
+                        fieldInfo.addProperty("size", it.size)
                     }
 
                     if (fieldValue != null && shouldUnnestType(fieldType)) {
@@ -323,7 +337,9 @@ class BlockEntityMap : Extractor {
 
             blockEntitiesJson.add(blockEntityId, blockEntityInfo)
         }
-
+        blockEntitiesJson.add("data:discovered_types", JsonArray().apply {
+            uniqueTypes.sorted().forEach { add(it) }
+        })
         return blockEntitiesJson
     }
 
@@ -396,5 +412,40 @@ class BlockEntityMap : Extractor {
 
     private fun camelToSnake(str: String): String {
         return str.replace(Regex("([a-z])([A-Z]+)"), "$1_$2").lowercase()
+    }
+
+    private fun sanitizeName(name: String): String {
+        return name.replace("java.lang.", "")
+                .replace("java.util.", "")
+                .replace("org.joml.", "")
+                .replace("net.minecraft.", "")
+                .replace("com.mojang.", "")
+                .replace("util.math.", "")
+                .replace("text.", "")
+                .replace("particle.", "")
+                .replace("entity.", "")
+                .replace("mob.", "")
+                .replace("block.", "")
+                .replace("passive.", "")
+                .replace("village.", "")
+                .replace("registry.entry.", "")
+                .replace("registry.", "")
+                .replace("item.", "")
+                .replace("inventory.", "")
+                .replace("recipe.", "")
+                .replace("loot.", "")
+                .replace("component.", "")
+                .replace("structure.pool.", "")
+                .replace("world.event.", "")
+                .replace("vault.", "")
+                .replace("decoration.painting.", "")
+                .replace("util.collection.", "")
+                .replace("util.", "")
+                .replace("it.unimi.dsi.fastobjects.", "")
+                .replace("nbt.", "")
+                .replace("enums.", "")
+                .replace("test.", "")
+                .replace("datafixers.", "")
+                .replace("type.", "")
     }
 }
