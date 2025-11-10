@@ -99,7 +99,7 @@ class BlockEntityMap : Extractor {
             mapOf(
                     "net.minecraft.block.entity.SkullBlockEntity" to
                             mapOf("customName" to "custom_name", "owner" to "profile"),
-                    "net.minecraft.block.entity.MobSpawnerBlockEntity" to
+                    "net.minecraft.block.spawner.MobSpawnerLogic" to
                             mapOf(
                                     "spawnEntry" to "SpawnData",
                             ),
