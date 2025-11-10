@@ -24,6 +24,7 @@ class BlockEntityMap : Extractor {
 
     private val nonPreservedFieldNames =
             setOf(
+                    "components",
                     "world",
                     "pos",
                     "cachedState",
@@ -204,7 +205,9 @@ class BlockEntityMap : Extractor {
                     if (preservation == NbtPreservation.NON_PRESERVED) return@forEach
                     if (skipUnknownFields)
                             if (nbtKey == "_____UNKNOWN_____")
-                                    if (!preserveUnknown.contains(field.name)) return@forEach
+                                    if (!preserveUnknown.contains(field.name))
+                                        if(!shouldExpandType(fieldType))
+                                            return@forEach
 
                     fieldInfo.addProperty("preservation", preservation.name)
                     fieldInfo.addProperty("nbt_name", nbtKey)
@@ -212,7 +215,9 @@ class BlockEntityMap : Extractor {
                     fieldInfo.addProperty("preservation", NbtPreservation.UNKNOWN.name)
                     fieldInfo.addProperty("nbt_name", nbtKey)
                 } else if (skipUnknownFields) {
-                    if (!preserveUnknown.contains(field.name)) return@forEach
+                    if (!preserveUnknown.contains(field.name)) 
+                        if(!shouldExpandType(fieldType))
+                            return@forEach
                 }
 
                 uniqueTypes.add(sanitizeName(field.genericType.typeName))
@@ -251,6 +256,7 @@ class BlockEntityMap : Extractor {
 
                     if (fieldType.isEnum) {
                         fieldInfo.add("enum_values", extractEnumInfo(fieldType))
+                        fieldInfo.addProperty("enum_value_sample", fieldValue.toString())
                     } else if (fieldValue != null && shouldExpandType(fieldType)) {
                         var dat: NbtCompound? = null
 
@@ -268,6 +274,11 @@ class BlockEntityMap : Extractor {
                         }
                     }
                 } catch (e: Exception) {}
+
+                if (skipUnknownFields)
+                    if (nbtKey == "_____UNKNOWN_____")//hide expanded type
+                            if (!preserveUnknown.contains(field.name))
+                                    return@forEach
 
                 fieldsJson.add(fieldInfo)
             }
@@ -321,6 +332,7 @@ class BlockEntityMap : Extractor {
 
                 val kClass = blockEntityInstance!!::class
                 blockEntityInfo.addProperty("class", kClass.qualifiedName)
+                blockEntityInfo.addProperty("id", Registries.BLOCK_ENTITY_TYPE.getRawId(blockEntityType))
 
                 val fieldsJson = extractFieldsRecursively(blockEntityInstance, defaultNbt, 1)
                 blockEntityInfo.add("fields", fieldsJson)
