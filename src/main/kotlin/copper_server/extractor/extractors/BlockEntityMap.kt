@@ -20,7 +20,7 @@ class BlockEntityMap : Extractor {
     private val maxExpansionDepth = 4
     private val skipUnknownFields = true
 
-    private val preserveUnknown = setOf("stateManager")
+    private val preserveUnknown = setOf("stateManager", "song", "forceActivate")
 
     private val nonPreservedFieldNames =
             setOf(
@@ -39,8 +39,17 @@ class BlockEntityMap : Extractor {
                     "listenerData",
                     "vibrationCallback",
                     "vibrationListenerData",
-                    "propertyDelegate",
+                    //"propertyDelegate",
                     "matchGetter",
+                    "dirty",
+                    "clientData",
+                    "playerDetector",
+                    "entitySelector",
+                    "editor",
+                    "renderedEntity",
+                    "displayEntityRotation",
+                    "lastDisplayEntityRotation",
+                    "displayEntity",
             )
 
     private val nonPreservedFieldTypes =
@@ -50,6 +59,9 @@ class BlockEntityMap : Extractor {
                     "org.slf4j.Logger",
                     "com.mojang.serialization.Codec",
                     "net.minecraft.block.entity.BlockEntityType",
+                    "net.minecraft.block.jukebox.JukeboxManager\$ChangeNotifier",
+                    "net.minecraft.block.spawner.EntityDetector",
+                    "net.minecraft.block.spawner.TrialSpawnerLogic\$TrialSpawner",
             )
 
     private val fabricPrefix = "fabric_"
@@ -58,8 +70,6 @@ class BlockEntityMap : Extractor {
 
     private val specialNbtMappings =
             mapOf(
-                    "inventory" to "Items",
-                    "heldStacks" to "Items",
                     "customName" to "CustomName",
                     "lock" to "lock",
                     "item" to "item",
@@ -97,6 +107,55 @@ class BlockEntityMap : Extractor {
 
     private val targetetNbtMappings =
             mapOf(
+                    "net.minecraft.block.entity.CrafterBlockEntity" to
+                            mapOf(
+                                    "inputStacks" to "Items",
+                            ),
+                    "net.minecraft.block.entity.AbstractFurnaceBlockEntity" to
+                            mapOf(
+                                    "inventory" to "Items",
+                            ),
+                    "net.minecraft.block.entity.ChestBlockEntity" to
+                            mapOf(
+                                    "inventory" to "Items",
+                            ),
+                    "net.minecraft.block.entity.DispenserBlockEntity" to
+                            mapOf(
+                                    "inventory" to "Items",
+                            ),
+                    "net.minecraft.block.entity.BrewingStandBlockEntity" to
+                            mapOf(
+                                    "inventory" to "Items",
+                            ),
+                    "net.minecraft.block.entity.HopperBlockEntity" to
+                            mapOf(
+                                    "inventory" to "Items",
+                            ),
+                    "net.minecraft.block.entity.ShulkerBoxBlockEntity" to
+                            mapOf(
+                                    "inventory" to "Items",
+                            ),
+                    "net.minecraft.block.entity.BarrelBlockEntity" to
+                            mapOf(
+                                    "inventory" to "Items",
+                            ),
+                    "net.minecraft.block.entity.CampfireBlockEntity" to
+                            mapOf(
+                                    "inventory" to "Items",
+                            ),
+                    "net.minecraft.block.entity.ChiseledBookshelfBlockEntity" to
+                            mapOf(
+                                    "heldStacks" to "Items",
+                            ),
+                    "net.minecraft.block.entity.ShelfBlockEntity" to
+                            mapOf(
+                                    "heldStacks" to "Items",
+                            ),
+                    "net.minecraft.block.entity.LecternBlockEntity" to
+                            mapOf(
+                                    "book" to "Book",
+                                    "pageCount" to "Page",
+                            ),
                     "net.minecraft.block.entity.SkullBlockEntity" to
                             mapOf("customName" to "custom_name", "owner" to "profile"),
                     "net.minecraft.block.spawner.MobSpawnerLogic" to
@@ -110,6 +169,71 @@ class BlockEntityMap : Extractor {
                                     "extending" to "extending",
                                     "progress" to "progress",
                                     "source" to "source",
+                            ),
+                    "net.minecraft.block.vault.VaultServerData" to
+                            mapOf(
+                                    "rewardedPlayers" to "rewarded_players",
+                                    "totalEjectionsNeeded" to "total_ejections_needed",
+                            ),
+                    "net.minecraft.block.entity.BeaconBlockEntity" to
+                            mapOf(
+                                    "primary" to "primary_effect",
+                                    "secondary" to "secondary_effect",
+                            ),
+                    "net.minecraft.block.entity.BannerBlockEntity" to
+                            mapOf(
+                                    "patterns" to "patterns", // FIXME unfold the patterns
+                            ),
+                    "net.minecraft.block.entity.StructureBlockBlockEntity" to
+                            mapOf(
+                                    "templateName" to "name",
+                                    "ignoreEntities" to "ignoreEntities",
+                                    "showBoundingBox" to "showboundingbox",
+                            ),
+                    "net.minecraft.block.entity.EndGatewayBlockEntity" to
+                            mapOf(
+                                    "exitPortalPos" to "exit_portal",
+                                    "exactTeleport" to "ExactTeleport",
+                            ),
+                    "net.minecraft.block.entity.CommandBlockBlockEntity" to
+                            mapOf(
+                                    "conditionMet" to "conditionMet",
+                                    "lastOutput" to "LastOutput",
+                                    "trackOutput" to "TrackOutput",
+                            ),
+                    "net.minecraft.block.spawner.TrialSpawnerData" to
+                            mapOf(
+                                    "spawnData" to "spawn_data",
+                                    "players" to "registered_players",
+                                    "spawnedMobsAlive" to "current_mobs",
+                                    "totalSpawnedMobs" to "total_spawned_mobs",
+                                    "nextMobSpawnsAt" to "next_mob_spawns_at",
+                                    "cooldownEnd" to "cooldown_ends_at",
+                                    "rewardLootTable" to "ejecting_loot_table",
+                            ),
+                    "net.minecraft.block.spawner.TrialSpawnerLogic\$FullConfig" to
+                            mapOf(
+                                    "normal" to "normal_cofig",
+                                    "ominous" to "ominous_config",
+                                    "targetCooldownLength" to "target_cooldown_length",
+                                    "requiredPlayerRange" to "required_player_range",
+                            ),
+            )
+
+    private val targetetNbtTypeOveride =
+            mapOf(
+                    "net.minecraft.block.entity.EndGatewayBlockEntity" to
+                            mapOf(
+                                    "exitPortalPos" to "int[3]",
+                            ),
+            )
+
+    private val targetetUnnestedNbtMapping =
+            mapOf(
+                    "net.minecraft.block.entity.StructureBlockBlockEntity" to
+                            mapOf(
+                                    "offset" to mapOf("x" to "posX", "y" to "posY", "z" to "posZ"),
+                                    "size" to mapOf("x" to "sizeX", "y" to "sizeY", "z" to "sizeZ")
                             ),
             )
 
@@ -129,7 +253,6 @@ class BlockEntityMap : Extractor {
                     "net.minecraft.predicate.item.ItemPredicate",
                     "it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap",
                     "net.minecraft.block.entity.ViewerCountManager",
-                    "net.minecraft.block.jukebox.JukeboxManager\$ChangeNotifier",
                     "net.minecraft.util.math.Direction",
                     "net.minecraft.block.BlockState",
                     "net.minecraft.util.math.Vec3i",
@@ -138,8 +261,13 @@ class BlockEntityMap : Extractor {
     private val unnestingTypes =
             setOf(
                     "net.minecraft.block.spawner.MobSpawnerLogic",
+                    "net.minecraft.block.spawner.TrialSpawnerLogic",
+                    "net.minecraft.block.spawner.TrialSpawnerLogic\$FullConfig",
+                    "net.minecraft.block.spawner.TrialSpawnerData",
                     "net.minecraft.world.event.Vibrations",
                     "net.minecraft.block.jukebox.JukeboxManager",
+                    "net.minecraft.world.CommandBlockExecutor",
+                    "net.minecraft.screen.PropertyDelegate",
             )
 
     private val typesToGetSizeOf = setOf("net.minecraft.util.collection.DefaultedList")
@@ -176,7 +304,8 @@ class BlockEntityMap : Extractor {
     private fun extractFieldsRecursively(
             instance: Any,
             associatedNbt: NbtCompound?,
-            currentDepth: Int
+            currentDepth: Int,
+            unnestingContext: Map<String, kotlin.Any>? = null
     ): JsonArray {
         val fieldsJson = JsonArray()
         if (currentDepth > maxExpansionDepth) return fieldsJson
@@ -191,13 +320,26 @@ class BlockEntityMap : Extractor {
 
                 if (Modifier.isStatic(field.modifiers)) return@forEach
 
-                val nbtKey = findNbtKeyForField(field, associatedNbt)
+                val nbtKey = findNbtKeyForField(field, associatedNbt, unnestingContext)
+                val isUnnestedParent =
+                        targetetUnnestedNbtMapping
+                                .get(field.declaringClass.name)
+                                ?.containsKey(field.name)
+                                ?: false
 
                 val fieldInfo = JsonObject()
                 fieldInfo.addProperty("name", field.name)
                 val fieldType = field.type
                 fieldInfo.addProperty("type", sanitizeName(field.genericType.typeName))
                 fieldInfo.addProperty("declaring_class", field.declaringClass.name)
+                if (targetetNbtTypeOveride.containsKey(field.declaringClass.name)) {
+                    val overrideMapping = targetetNbtTypeOveride.getValue(field.declaringClass.name)
+                    if (overrideMapping.containsKey(field.name))
+                            fieldInfo.addProperty(
+                                    "nbt_type_override",
+                                    overrideMapping.getValue(field.name)
+                            )
+                }
 
                 if (needToSkip(field)) return@forEach
                 if (associatedNbt != null) {
@@ -206,18 +348,19 @@ class BlockEntityMap : Extractor {
                     if (skipUnknownFields)
                             if (nbtKey == "_____UNKNOWN_____")
                                     if (!preserveUnknown.contains(field.name))
-                                        if(!shouldExpandType(fieldType))
-                                            return@forEach
+                                            if (!shouldExpandType(fieldType) && !isUnnestedParent)
+                                                    return@forEach
 
                     fieldInfo.addProperty("preservation", preservation.name)
-                    fieldInfo.addProperty("nbt_name", nbtKey)
+                    if (!(isUnnestedParent && nbtKey == "_____UNKNOWN_____")) {
+                        fieldInfo.addProperty("nbt_name", nbtKey)
+                    }
                 } else if (nbtKey != "_____UNKNOWN_____") {
                     fieldInfo.addProperty("preservation", NbtPreservation.UNKNOWN.name)
                     fieldInfo.addProperty("nbt_name", nbtKey)
                 } else if (skipUnknownFields) {
-                    if (!preserveUnknown.contains(field.name)) 
-                        if(!shouldExpandType(fieldType))
-                            return@forEach
+                    if (!preserveUnknown.contains(field.name))
+                            if (!shouldExpandType(fieldType) && !isUnnestedParent) return@forEach
                 }
 
                 uniqueTypes.add(sanitizeName(field.genericType.typeName))
@@ -232,18 +375,10 @@ class BlockEntityMap : Extractor {
                         }
                     }
 
-                    (fieldValue as? IntArray)?.let {
-                        fieldInfo.addProperty("size", it.size)
-                    }
-                    (fieldValue as? DoubleArray)?.let {
-                        fieldInfo.addProperty("size", it.size)
-                    }
-                    (fieldValue as? LongArray)?.let {
-                        fieldInfo.addProperty("size", it.size)
-                    }
-                    (fieldValue as? ByteArray)?.let {
-                        fieldInfo.addProperty("size", it.size)
-                    }
+                    (fieldValue as? IntArray)?.let { fieldInfo.addProperty("size", it.size) }
+                    (fieldValue as? DoubleArray)?.let { fieldInfo.addProperty("size", it.size) }
+                    (fieldValue as? LongArray)?.let { fieldInfo.addProperty("size", it.size) }
+                    (fieldValue as? ByteArray)?.let { fieldInfo.addProperty("size", it.size) }
 
                     if (fieldValue != null && shouldUnnestType(fieldType)) {
                         val nestedFields =
@@ -254,10 +389,12 @@ class BlockEntityMap : Extractor {
                         }
                     }
 
+                    val shouldExpand =
+                            (fieldValue != null && shouldExpandType(fieldType)) || isUnnestedParent
                     if (fieldType.isEnum) {
                         fieldInfo.add("enum_values", extractEnumInfo(fieldType))
                         fieldInfo.addProperty("enum_value_sample", fieldValue.toString())
-                    } else if (fieldValue != null && shouldExpandType(fieldType)) {
+                    } else if (fieldValue != null && shouldExpand) {
                         var dat: NbtCompound? = null
 
                         if (associatedNbt != null) {
@@ -267,8 +404,23 @@ class BlockEntityMap : Extractor {
                             }
                         }
 
+                        val nestedUnnestingContext =
+                                if (isUnnestedParent) {
+                                    targetetUnnestedNbtMapping
+                                            .getValue(field.declaringClass.name)
+                                            .getValue(field.name)
+                                } else {
+                                    unnestingContext
+                                }
+
                         val nestedFields =
-                                extractFieldsRecursively(fieldValue, dat, currentDepth + 1)
+                                extractFieldsRecursively(
+                                        fieldValue,
+                                        dat,
+                                        currentDepth + 1,
+                                        nestedUnnestingContext
+                                )
+
                         if (nestedFields.size() > 0) {
                             fieldInfo.add("nested_fields", nestedFields)
                         }
@@ -276,9 +428,9 @@ class BlockEntityMap : Extractor {
                 } catch (e: Exception) {}
 
                 if (skipUnknownFields)
-                    if (nbtKey == "_____UNKNOWN_____")//hide expanded type
-                            if (!preserveUnknown.contains(field.name))
-                                    return@forEach
+                        if (nbtKey == "_____UNKNOWN_____") // hide expanded type
+                                if (!preserveUnknown.contains(field.name) && !isUnnestedParent)
+                                        return@forEach
 
                 fieldsJson.add(fieldInfo)
             }
@@ -332,7 +484,10 @@ class BlockEntityMap : Extractor {
 
                 val kClass = blockEntityInstance!!::class
                 blockEntityInfo.addProperty("class", kClass.qualifiedName)
-                blockEntityInfo.addProperty("id", Registries.BLOCK_ENTITY_TYPE.getRawId(blockEntityType))
+                blockEntityInfo.addProperty(
+                        "id",
+                        Registries.BLOCK_ENTITY_TYPE.getRawId(blockEntityType)
+                )
 
                 val fieldsJson = extractFieldsRecursively(blockEntityInstance, defaultNbt, 1)
                 blockEntityInfo.add("fields", fieldsJson)
@@ -349,9 +504,10 @@ class BlockEntityMap : Extractor {
 
             blockEntitiesJson.add(blockEntityId, blockEntityInfo)
         }
-        blockEntitiesJson.add("data:discovered_types", JsonArray().apply {
-            uniqueTypes.sorted().forEach { add(it) }
-        })
+        blockEntitiesJson.add(
+                "data:discovered_types",
+                JsonArray().apply { uniqueTypes.sorted().forEach { add(it) } }
+        )
         return blockEntitiesJson
     }
 
@@ -372,7 +528,8 @@ class BlockEntityMap : Extractor {
                 Modifier.isTransient(mods) ||
                 nonPreservedFieldNames.contains(field.name) ||
                 field.name.startsWith(fabricPrefix) ||
-                nonPreservedFieldTypes.contains(field.type.name)
+                nonPreservedFieldTypes.contains(field.type.name) ||
+                field.name.startsWith("field_")
     }
 
     private fun determinePreservation(
@@ -396,7 +553,16 @@ class BlockEntityMap : Extractor {
         }
     }
 
-    private fun findNbtKeyForField(field: Field, defaultNbt: NbtCompound?): String {
+    private fun findNbtKeyForField(
+            field: Field,
+            defaultNbt: NbtCompound?,
+            unnestingContext: Map<String, kotlin.Any>?
+    ): String {
+        if (unnestingContext != null && unnestingContext.containsKey(field.name)){
+            val value = unnestingContext.getValue(field.name)
+            if(value is String)
+                return value
+        }
         val snake = camelToSnake(field.name)
         val pascal = field.name.replaceFirstChar { it.uppercaseChar() }
         if (defaultNbt != null) {
